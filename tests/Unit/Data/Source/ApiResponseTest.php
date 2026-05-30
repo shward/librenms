@@ -98,4 +98,15 @@ final class ApiResponseTest extends TestCase
 
         $this->assertSame([], $response->table('result', 'body', 'TABLE_vrf', 'ROW_vrf'));
     }
+
+    public function testPluckExtractsColumnFromTableRows(): void
+    {
+        $body = ['rows' => [
+            ['name' => 'default', 'id' => 1],
+            ['name' => 'PROD', 'id' => 2],
+        ]];
+        $response = new ApiResponse(200, $body);
+
+        $this->assertSame(['default', 'PROD'], $response->pluck('name', 'rows'));
+    }
 }

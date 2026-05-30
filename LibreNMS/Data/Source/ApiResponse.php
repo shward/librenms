@@ -78,14 +78,20 @@ class ApiResponse
             return false;
         }
 
-        // JSON-RPC error: HTTP 200 with an {"error": {...}} object
-        if (isset($this->body['error'])) {
+        // JSON-RPC error: HTTP 200 with an {"error": ...} member. Use array_key_exists so a
+        // present-but-null error is still treated as an error, not a success.
+        if (array_key_exists('error', $this->body)) {
             $err = $this->body['error'];
-            $this->errorMessage = is_array($err) ? ($err['message'] ?? json_encode($err)) : (string) $err;
+            $this->errorMessage = match (true) {
+                $err === null => 'Unknown API error',
+                is_array($err) => $err['message'] ?? (string) json_encode($err),
+                default => (string) $err,
+            };
 
             return false;
         }
 
+        // An empty body ([] / {}) is a valid 200 response; callers check table()/json() for content.
         return true;
     }
 
