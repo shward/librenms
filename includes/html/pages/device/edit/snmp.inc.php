@@ -45,6 +45,19 @@ if (isset($_POST['editing'])) {
             $device->version = null;
         }
 
+        // API credentials (HTTP/REST data source). Persisted regardless of SNMP enable state.
+        $device->api_transport = $_POST['api_transport'] ?: null;
+        $device->api_host = $_POST['api_host'] ?: null;
+        $device->api_port = $_POST['api_port'] ?: null;
+        $device->api_username = $_POST['api_username'] ?: null;
+        $device->api_verify_tls = isset($_POST['api_verify_tls']) && $_POST['api_verify_tls'] == 'on' ? 1 : 0;
+        if (($_POST['api_password'] ?? '') !== '********') {
+            $device->api_password = $_POST['api_password'] ?: null;
+        }
+        if (($_POST['api_token'] ?? '') !== '********') {
+            $device->api_token = $_POST['api_token'] ?: null;
+        }
+
         $device_is_snmpable = false;
         $device_updated = false;
 
@@ -398,6 +411,45 @@ if ($device->snmpEngineID) {
 
 <?php
 }
+?>
+
+<?php
+echo "
+    <div class='form-group'>
+    <label class='col-sm-2 control-label'>API Transport</label>
+    <div class='col-sm-4'>
+    <select id='api_transport' class='form-control' name='api_transport'>
+        <option value=''" . ($device->api_transport ? '' : ' selected') . ">None</option>
+        <option value='https'" . ($device->api_transport === 'https' ? ' selected' : '') . ">HTTPS (NX-API / REST)</option>
+        <option value='http'" . ($device->api_transport === 'http' ? ' selected' : '') . ">HTTP</option>
+    </select>
+    </div>
+    </div>
+    <div class='form-group'>
+    <label for='api_host' class='col-sm-2 control-label'>API Host (optional)</label>
+    <div class='col-sm-4'><input id='api_host' class='form-control' name='api_host' placeholder='" . htmlspecialchars($device->hostname) . "' value='" . htmlspecialchars($device->api_host ?? '') . "'/></div>
+    </div>
+    <div class='form-group'>
+    <label for='api_port' class='col-sm-2 control-label'>API Port</label>
+    <div class='col-sm-4'><input id='api_port' class='form-control' name='api_port' value='" . htmlspecialchars((string) ($device->api_port ?? '443')) . "'/></div>
+    </div>
+    <div class='form-group'>
+    <label for='api_username' class='col-sm-2 control-label'>API Username</label>
+    <div class='col-sm-4'><input id='api_username' class='form-control' name='api_username' value='" . htmlspecialchars($device->api_username ?? '') . "'/></div>
+    </div>
+    <div class='form-group'>
+    <label for='api_password' class='col-sm-2 control-label'>API Password</label>
+    <div class='col-sm-4'><input type='password' id='api_password' class='form-control' name='api_password' value='" . ($device->api_password ? '********' : '') . "' autocomplete='off'/></div>
+    </div>
+    <div class='form-group'>
+    <label for='api_token' class='col-sm-2 control-label'>API Token (overrides user/pass)</label>
+    <div class='col-sm-4'><input type='password' id='api_token' class='form-control' name='api_token' value='" . ($device->api_token ? '********' : '') . "' autocomplete='off'/></div>
+    </div>
+    <div class='form-group'>
+    <label for='api_verify_tls' class='col-sm-2 control-label'>Verify TLS</label>
+    <div class='col-sm-4'><input type='checkbox' id='api_verify_tls' name='api_verify_tls'" . ($device->api_verify_tls ? ' checked' : '') . "/> <span class='help-block'>Uncheck for self-signed NX-API certificates.</span></div>
+    </div>
+    ";
 ?>
 
 <div class="form-group">
