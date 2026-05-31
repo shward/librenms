@@ -431,7 +431,7 @@ echo "
     </div>
     <div class='form-group'>
     <label for='api_port' class='col-sm-2 control-label'>API Port</label>
-    <div class='col-sm-4'><input id='api_port' class='form-control' name='api_port' value='" . htmlspecialchars((string) ($device->api_port ?? '443')) . "'/></div>
+    <div class='col-sm-4'><input id='api_port' class='form-control' name='api_port' value='" . htmlspecialchars((string) ($device->api_port ?? '')) . "' placeholder='443'/></div>
     </div>
     <div class='form-group'>
     <label for='api_username' class='col-sm-2 control-label'>API Username</label>
