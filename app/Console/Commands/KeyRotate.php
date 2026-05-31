@@ -3,9 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Console\LnmsCommand;
+use App\Models\Device;
 use Artisan;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Encryption\Encrypter;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use LibreNMS\Util\EnvHelper;
@@ -125,6 +127,8 @@ class KeyRotate extends LnmsCommand
             return 1;
         }
 
+        $this->rekeyDeviceCredentials();
+
         $this->info(trans('commands.key:rotate.success'));
 
         if ($this->option('generate-new-key') && $this->confirm(trans('commands.key:rotate.save_key'))) {
@@ -135,6 +139,52 @@ class KeyRotate extends LnmsCommand
         }
 
         return 0;
+    }
+
+    private function rekeyDeviceCredentials(): void
+    {
+        $columns = ['api_password', 'api_token'];
+
+        $query = Device::query();
+        foreach ($columns as $i => $col) {
+            $query = $i === 0 ? $query->whereNotNull($col) : $query->orWhereNotNull($col);
+        }
+
+        $count = 0;
+        $errors = 0;
+
+        $query->each(function (Device $device) use ($columns, &$count, &$errors) {
+            $updates = [];
+
+            foreach ($columns as $col) {
+                $raw = $device->getRawOriginal($col);
+                if ($raw === null) {
+                    continue;
+                }
+
+                try {
+                    // Decrypt with the old key (cast stores serialized values, so unserialize=true)
+                    $plain = $this->decrypt->decrypt($raw);
+                    // Re-encrypt with the new key (serialize=true to match cast behaviour)
+                    $updates[$col] = $this->encrypt->encrypt($plain);
+                } catch (DecryptException) {
+                    try {
+                        // Already rotated — new key decrypts it fine; leave it alone
+                        $this->encrypt->decrypt($raw);
+                    } catch (DecryptException) {
+                        $this->warn('key:rotate: could not decrypt device ' . $device->device_id . ' column ' . $col . ' — skipping');
+                        $errors++;
+                    }
+                }
+            }
+
+            if (! empty($updates)) {
+                DB::table('devices')->where('device_id', $device->device_id)->update($updates);
+                $count++;
+            }
+        });
+
+        $this->line('key:rotate: re-encrypted API credentials for ' . $count . ' device(s)' . ($errors > 0 ? ' (' . $errors . ' error(s) skipped)' : '') . '.');
     }
 
     private function createEncrypter(string $key, string $cipher): Encrypter
