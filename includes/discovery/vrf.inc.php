@@ -225,6 +225,29 @@ if (LibrenmsConfig::get('enable_vrfs')) {
 
                 d_echo("\n[DEBUG NX-OS VRF discovery]\nFound: " . implode(', ', array_keys($vrf_names)) . "\n[/DEBUG]\n");
 
+                // NX-API fallback: SNMP (NV-OVERLAY + BGP4) exposed no VRFs, but the device has an API
+                // configured. NX-OS 'show vrf' over NX-API returns ALL VRFs, including SNMP-invisible ones.
+                if (empty($vrf_names) && $device['api_transport']) {
+                    $api_response = \ApiQuery::device(DeviceCache::getPrimary())->cli('show vrf');
+
+                    if (! $api_response->isValid()) {
+                        // Transport/auth error -> preserve existing rows; never wipe on a blip.
+                        echo "\n  [VRF discovery] NX-OS fallback: NX-API error (" . $api_response->getErrorMessage() . '); preserving existing vrfs rows for this device.';
+                        foreach (DeviceCache::getPrimary()->vrfs()->pluck('vrf_id') as $existing_vrf_id) {
+                            $valid_vrf[$existing_vrf_id] = 1;
+                        }
+                    } else {
+                        $valid_name_re = '/^[A-Za-z0-9_-]{1,32}$/';
+                        foreach ($api_response->table('result', 'body', 'TABLE_vrf', 'ROW_vrf') as $row) {
+                            $name = $row['vrf_name'] ?? null;
+                            if (is_string($name) && preg_match($valid_name_re, $name)) {
+                                $vrf_names[$name] = true;
+                            }
+                        }
+                        echo "\n  [VRF discovery] NX-OS fallback: NX-API 'show vrf' found " . count($vrf_names) . ' VRF(s).';
+                    }
+                }
+
                 if (empty($vrf_names)) {
                     // Walks completed but yielded no parseable VRFs (Nexus
                     // with VRFs configured but no L3VNI and no BGP peers).
