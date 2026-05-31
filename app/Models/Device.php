@@ -88,6 +88,14 @@ class Device extends BaseModel
         'type',
         'version',
         'uptime',
+        'api_transport',
+        'api_host',
+        'api_port',
+        'api_username',
+        'api_password',
+        'api_token',
+        'api_verify_tls',
+        'api_auth_type',
     ];
 
     protected array $filterable = [
@@ -130,8 +138,22 @@ class Device extends BaseModel
             'snmp_disable' => 'boolean',
             'disable_notify' => 'boolean',
             'override_sysLocation' => 'boolean',
+            'api_password' => 'encrypted',
+            'api_token' => 'encrypted',
+            'api_verify_tls' => 'boolean',
         ];
     }
+
+    /**
+     * Keep API secrets out of array/JSON serialization (e.g. the REST API).
+     * Read them via attribute access ($device->api_password), which bypasses $hidden.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'api_password',
+        'api_token',
+    ];
 
     // ---- Helper Functions ----
 
