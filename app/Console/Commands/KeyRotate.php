@@ -163,14 +163,13 @@ class KeyRotate extends LnmsCommand
                 }
 
                 try {
-                    // Decrypt with the old key (cast stores serialized values, so unserialize=true)
-                    $plain = $this->decrypt->decrypt($raw);
-                    // Re-encrypt with the new key (serialize=true to match cast behaviour)
-                    $updates[$col] = $this->encrypt->encrypt($plain);
+                    // Plain 'encrypted' cast uses encryptString/decryptString (no serialize); match that here.
+                    $plain = $this->decrypt->decryptString($raw);
+                    $updates[$col] = $this->encrypt->encryptString($plain);
                 } catch (DecryptException) {
                     try {
                         // Already rotated — new key decrypts it fine; leave it alone
-                        $this->encrypt->decrypt($raw);
+                        $this->encrypt->decryptString($raw);
                     } catch (DecryptException) {
                         $this->warn('key:rotate: could not decrypt device ' . $device->device_id . ' column ' . $col . ' — skipping');
                         $errors++;
