@@ -10,6 +10,17 @@
 
 **Approved spec:** `docs/superpowers/specs/2026-05-29-librenms-api-data-source-design.md` (decisions locked in §9).
 
+> **REVISED 2026-05-30** — this plan is now **Milestone 1 of the expanded transport architecture**
+> (`docs/superpowers/specs/2026-05-30-librenms-transport-architecture.md`). Changes to the scope below:
+> - **Phase 3 (the dashboard widget — Tasks 9–11) is REMOVED from M1** and deferred to roadmap M3 (the widget
+>   was shelved by the user; display is automatic via existing tabs/health pages).
+> - **PR-B (credentials) gains a `KeyRotate` extension** — `KeyRotate` today only rekeys a config row, NOT model
+>   columns, so encrypted `api_password`/`api_token` would become undecryptable after `key:rotate` without it.
+> - **The Task 5 migration adds a nullable `api_auth_type`** (varchar(16), e.g. `basic`|`token`) for forward-compat,
+>   to avoid a second `ALTER devices` later.
+> - Storage shape: **flat encrypted columns on `devices`** (confirmed); no child table; `transports`/`primary_transport`
+>   columns are deferred to M2 (onboarding auto-detect); `winrm_*` columns deferred to M6.
+
 ---
 
 ## Conventions every task must follow
