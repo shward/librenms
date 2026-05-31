@@ -682,6 +682,14 @@ devices:
     - { Field: disable_notify, Type: tinyint, 'Null': false, Extra: '', Default: '0' }
     - { Field: ignore_status, Type: tinyint, 'Null': false, Extra: '', Default: '0' }
     - { Field: mtu_status, Type: tinyint, 'Null': false, Extra: '', Default: '1' }
+    - { Field: api_transport, Type: varchar(16), 'Null': true, Extra: '' }
+    - { Field: api_host, Type: varchar(128), 'Null': true, Extra: '' }
+    - { Field: api_port, Type: 'smallint unsigned', 'Null': true, Extra: '' }
+    - { Field: api_username, Type: varchar(128), 'Null': true, Extra: '' }
+    - { Field: api_password, Type: text, 'Null': true, Extra: '' }
+    - { Field: api_token, Type: text, 'Null': true, Extra: '' }
+    - { Field: api_verify_tls, Type: tinyint, 'Null': false, Extra: '', Default: '1' }
+    - { Field: api_auth_type, Type: varchar(16), 'Null': true, Extra: '' }
   Indexes:
     PRIMARY: { Name: PRIMARY, Columns: [device_id], Unique: true, Type: BTREE }
     devices_display_index: { Name: devices_display_index, Columns: [display], Unique: false, Type: BTREE }
