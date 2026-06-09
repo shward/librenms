@@ -76,7 +76,11 @@ class HttpApiQuery implements ApiQueryInterface
 
     public function cli(string $command): ApiResponse
     {
-        // Cisco NX-API ins-api JSON-RPC envelope
+        // Cisco NX-API ins-api JSON-RPC envelope. NX-API selects its request
+        // parser from the Content-Type header: a JSON-RPC body must be sent as
+        // 'application/json-rpc'. The 'application/json' that Laravel applies to
+        // an array body makes NX-API reject the request with HTTP 400
+        // ("Invalid request. Request is rejected."), so set it explicitly.
         $body = [
             'jsonrpc' => '2.0',
             'method' => 'cli',
@@ -84,7 +88,7 @@ class HttpApiQuery implements ApiQueryInterface
             'id' => 1,
         ];
 
-        return $this->execute('POST', '/ins', ['json' => $body]);
+        return $this->execute('POST', '/ins', ['json' => $body, 'contentType' => 'application/json-rpc']);
     }
 
     /**
@@ -100,7 +104,9 @@ class HttpApiQuery implements ApiQueryInterface
                 $client = $this->buildClient();
                 $response = match ($method) {
                     'GET' => $client->get($path, $options['query'] ?? []),
-                    'POST' => $client->post($path, $options['json'] ?? []),
+                    'POST' => isset($options['contentType'])
+                        ? $client->withBody((string) json_encode($options['json'] ?? []), $options['contentType'])->post($path)
+                        : $client->post($path, $options['json'] ?? []),
                     default => $client->send($method, $path),
                 };
 

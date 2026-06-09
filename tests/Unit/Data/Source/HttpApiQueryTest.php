@@ -61,7 +61,10 @@ final class HttpApiQueryTest extends TestCase
         $this->assertSame('default', $response->table('result', 'body', 'TABLE_vrf', 'ROW_vrf')[0]['vrf_name']);
 
         Http::assertSent(function ($request) {
+            // NX-API rejects the JSON-RPC envelope with HTTP 400 unless the
+            // Content-Type is application/json-rpc (not the default application/json).
             return $request->url() === 'https://switch.example.com:443/ins'
+                && $request->hasHeader('Content-Type', 'application/json-rpc')
                 && $request['method'] === 'cli'
                 && $request['params']['cmd'] === 'show vrf';
         });
